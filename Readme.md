@@ -17,8 +17,10 @@ For detailed theoritical understanding with code please refer to this link https
 
 
 **2. State space:**
-For state input we are using an 80x80 patch of sand image around the current car location. Resized it to 40x40 using cv2.
+For state input we are using an 60x60 patch of sand image around the current car location. Resized it to 40x40 using cv2.
 These patches are stored into the Replay Buffer and subsiquently sampled in batches to be used for training the TD3 models.
+Along with Image, car orientation (two values -ve and +ve) values are sent as state information. 
+In total state space, representing each state is one image of dimentions 60x60 resized to 40x40, and a vector a two values representing car orientation.
 
 **3. Action space:**
 Since the TD3 allowes us the flexibility of continuous action spaces. We are using one output dimention to represent the angle of car. This single output value estimates values in the range of -5 to 5, which is also the range of car rotation from left extream to right extream. This is seen as a regresion problem on the side of actor model.
@@ -47,3 +49,5 @@ I have included td3 into the car-map environment with out any issue. Everything 
 But the policy netork does not estimate good actions, in a way it is giving similar values every time. Resulting in car taking circular turns in the same location.
 
 **I am using a CPU based pc with a ram size of 8GB and 4 cpu cores.**
+
+**I have everything integrted into the for the TD3, but for some reason the car is just taking circular paths. I need few more days to figure out the reason and resolve the issue**
