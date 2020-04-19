@@ -26,6 +26,7 @@ Since the TD3 allowes us the flexibility of continuous action spaces. We are usi
 **4. Episode termination states:**
 On reaching goal(with +ver reward) or the boundery of the map(with -ve reward) the episode termination step is reached.
 In total I have used 7 gols which will be targetted one after the other:
+
         # A = (1420,622)  b = (9,85)  C = (580,530) D = (780,360) 
         # E = (1100,310) F = (115,450) G = (1050,600)
 After the end of episode is reached variable Done = 1, and the the car is reset to a random location in the map.
