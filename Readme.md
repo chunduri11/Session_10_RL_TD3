@@ -5,6 +5,7 @@
 
 
 **Changes made from the Session-7 Assginment:**
+
 **1. Replaced dqn with TD3: **
 TD3 is policy estimation algorith, which contains 6 NN models in total.
 Two actor models -- actor model, actor target
