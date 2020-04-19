@@ -25,6 +25,7 @@ Since the TD3 allowes us the flexibility of continuous action spaces. We are usi
 
 **4. Episode termination states:**
 On reaching goal(with +ver reward) or the boundery of the map(with -ve reward) the episode termination step is reached.
+Episode also ends if the car does not reach the map wall or goal in 2000 steps, here -ve reward is given.
 In total I have used 7 gols which will be targetted one after the other:
 
         # A = (1420,622)  b = (9,85)  C = (580,530) D = (780,360) 
@@ -32,4 +33,16 @@ In total I have used 7 gols which will be targetted one after the other:
 After the end of episode is reached variable Done = 1, and the the car is reset to a random location in the map.
 Also after teh end of episode the training starts for the number of steps equal to the number of step in the previous episode.
 
+Since I am running first 2000 steps with uniform random sampling from the range of -5 to 5 as action to be sent to the car. First few episodes will perform random exloration.
+Subsiquently the actions to move the car will come from policy model(model actor). Even here I am introducing 20% random action being seleted for some exploration scope.
 
+**5.Neural network model for actor-critic:**
+Since our input is state is an image I have used CNN based model for both actor and critic models.
+To feed both state(s) and action(a) together to the critic models is tricky because concatinating two tensors of different dimentions is not possible. And they are also of different feature type. For this to work, passed the image through the cnn and after the flatten layer the output is 1-dimentional feature vector, this is concatinated to the action value and followed up with two more fully connected layers.
+
+**CURRENT STATUS**
+I have included td3 into the car-map environment with out any issue. Everything is properly integrated.
+
+But he policy netork does not estimate good actions, in a way it is giving similar values every time. Resulting in car taking circular turns in the same location.
+
+**I am using a CPU based pc with a ram size of 8GB and 4 cpu cores.**
