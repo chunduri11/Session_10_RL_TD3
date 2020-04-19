@@ -6,7 +6,7 @@
 
 **Changes made from the Session-7 Assginment:**
 
-**1. Replaced dqn with TD3: **
+**1. Replaced dqn with TD3:**
 TD3 is policy estimation algorith, which contains 6 NN models in total.
 Two actor models -- actor model, actor target
 Four critic models -- two critic models, two critic targets.
@@ -23,4 +23,12 @@ These patches are stored into the Replay Buffer and subsiquently sampled in batc
 **3. Action space:**
 Since the TD3 allowes us the flexibility of continuous action spaces. We are using one output dimention to represent the angle of car. This single output value estimates values in the range of -5 to 5, which is also the range of car rotation from left extream to right extream. This is seen as a regresion problem on the side of actor model.
 
-4. 
+**4. Episode termination states:**
+On reaching goal(with +ver reward) or the boundery of the map(with -ve reward) the episode termination step is reached.
+In total I have used 7 gols which will be targetted one after the other:
+        # A = (1420,622)  b = (9,85)  C = (580,530) D = (780,360) 
+        # E = (1100,310) F = (115,450) G = (1050,600)
+After the end of episode is reached variable Done = 1, and the the car is reset to a random location in the map.
+Also after teh end of episode the training starts for the number of steps equal to the number of step in the previous episode.
+
+
