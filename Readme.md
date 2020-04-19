@@ -41,8 +41,9 @@ Since our input is state is an image I have used CNN based model for both actor 
 To feed both state(s) and action(a) together to the critic models is tricky because concatinating two tensors of different dimentions is not possible. And they are also of different feature type. For this to work, passed the image through the cnn and after the flatten layer the output is 1-dimentional feature vector, this is concatinated to the action value and followed up with two more fully connected layers.
 
 **CURRENT STATUS**
+
 I have included td3 into the car-map environment with out any issue. Everything is properly integrated.
 
-But he policy netork does not estimate good actions, in a way it is giving similar values every time. Resulting in car taking circular turns in the same location.
+But the policy netork does not estimate good actions, in a way it is giving similar values every time. Resulting in car taking circular turns in the same location.
 
 **I am using a CPU based pc with a ram size of 8GB and 4 cpu cores.**
