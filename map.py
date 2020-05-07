@@ -137,8 +137,10 @@ class Game(Widget):
         img = PILImage.open("./images/MASK1.png").convert('L')
 
         car_in_img = img
-        car_img1 =  car_img.rotate(self.car.angle, PILImage.NEAREST, expand = 1)
         
+        # Rotate the car located in the map to alighn it to the orientation of goal
+        car_img1 =  car_img.rotate(self.car.angle, PILImage.NEAREST, expand = 1)
+
         # Paste car image in the black & weight map it its location
         car_in_img.paste(car_img1, (int(self.car.x), 660-int(self.car.y)), car_img1)
         
