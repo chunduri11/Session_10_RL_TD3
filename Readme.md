@@ -3,6 +3,10 @@
 2. Using TD3 algorithm to train the continuous policy estimation model.
 3. Extract patch which contains car and its surroundings, can be used as state and use CNN based neural network model for actor-critic networks.
 
+**"img_map_car.png"** image above is the sample image of the map with car image pasted on it.
+
+**"patch_4040.png"** is the patch of image resized to 40x40 which also contains the car corrected with orientation, will be sent to the CNN models as part of state information.
+
 
 **Changes made from the Session-7 Assginment:**
 
