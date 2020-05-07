@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import time
 
 import cv2
+from matplotlib import cm
+import scipy.ndimage
 
 # Importing the Kivy packages
 from kivy.app import App
@@ -37,10 +39,11 @@ n_points = 0
 length = 0
 
 # Getting our AI, which we call "brain", and that contains our neural network that represents our Q-function
-brain = TD3((1,40,40),1,5)
+brain = TD3((1,40,40),1,10)
 # action2rotation = [0,5,-5]
 last_reward = 0
-scores = []
+reward = 0
+# scores = []
 im = CoreImage("./images/MASK1.png")
 
 # textureMask = CoreImage(source="./kivytest/simplemask1.png")
@@ -50,12 +53,18 @@ im = CoreImage("./images/MASK1.png")
 first_update = True
 def init():
     global sand
+    global img
+    global car_img
     global goal_x
     global goal_y
     global first_update
-    sand = np.zeros((longueur,largeur))
+    sand = np.zeros((longueur,largeur));print("---",sand.shape)
     img = PILImage.open("./images/mask.png").convert('L')
+    # img = img.rotate(90, PILImage.NEAREST, expand = 1)
+    car_img = PILImage.open("./images/car.png")
+    car_img = car_img.resize((20,10),PILImage.ANTIALIAS)
     sand = np.asarray(img)/255
+    print("sand",sand.shape)
     goal_x = 1420
     goal_y = 622
     first_update = False
@@ -100,8 +109,9 @@ class Game(Widget):
     def update(self, dt):
 
         global brain
+        global reward
         global last_reward
-        global scores
+        # global scores
         global last_distance
         global goal_x
         global goal_y
@@ -117,106 +127,171 @@ class Game(Widget):
         largeur = self.height
         if first_update:
             init()
+        # self.car.y = 660 - self.car.y
 
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
+        # print("carx y", int(self.car.x), int(self.car.y))
         orientation = Vector(*self.car.velocity).angle((xx,yy))/180.
-        image = sand[int(self.car.x)-30:int(self.car.x)+30, int(self.car.y)-30:int(self.car.y)+30]
+
+        # img = PILImage.open("./images/mask.png").convert('L')
+        # img = img.rotate(90, PILImage.NEAREST, expand = 1)
+        # print("img",type(img))
+        # car_img = PILImage.open("./images/car.png")
+        # car_img = car_img.resize((20,10),PILImage.ANTIALIAS)
+        # print("car x y first", int(self.car.x), int(self.car.y))
+
+        img = PILImage.open("./images/MASK1.png").convert('L')
+        # car_img =  car_img.rotate(-self.car.angle, PILImage.NEAREST, expand = 1)
+        # car_img = scipy.ndimage.rotate(car_img, -self.car.angle, mode='constant', cval=1.0, reshape=False, prefilter=False)
+        # img_citymap = PILImage.open("./images/citymap.jpeg")
+
+        car_in_img = img
+        # car_in_img = car_in_img.rotate(90, PILImage.NEAREST, expand = 1)
+        # import pdb;pdb.set_trace()
+        car_img1 =  car_img.rotate(self.car.angle, PILImage.NEAREST, expand = 1)
+        car_in_img.paste(car_img1, (int(self.car.x), 660-int(self.car.y)), car_img1)
+        
+        # img_citymap.paste(car_img, (int(self.car.x), int(self.car.y)), car_img)
+        img_car_sand = np.asarray(car_in_img)/255
+        # img_car_citymap = np.asarray(img_citymap)/255
+        # print("img car sand", img_car_citymap.shape)
+        # print("img car sand",img_car_sand[:20,:20])
+        image = img_car_sand[660-int(self.car.y)-30:660-int(self.car.y)+30, int(self.car.x)-30:int(self.car.x)+30]
+        # img_car_citymap_patch = img_car_citymap[int(self.car.x)-30:int(self.car.x)+30, int(self.car.y)-30:int(self.car.y)+30]
+
+        # image = scipy.ndimage.rotate(image, -self.car.angle, mode='constant', cval=1.0, reshape=False, prefilter=False)
         
 
+        # print("image patch",image.shape, int(self.car.x), 660-int(self.car.y))
+        print("image shape", image.shape)
+        print("car y x", self.car.y, self.car.x)
+        print(660-int(self.car.y)-30, 660-int(self.car.y)+30, int(self.car.x)-30, int(self.car.x)+30)
         image = cv2.resize(image, dsize=(40, 40), interpolation=cv2.INTER_CUBIC)
+        # print("image patch",image.shape)
+
+        # image_patch = PILImage.fromarray(np.uint8(cm.gist_earth(image)*255))
+        # img = img.rotate(90, PILImage.NEAREST, expand = 1)#;print("img 90",img.shape)
+        # car_in_img = car_in_img.rotate(90, PILImage.NEAREST, expand = 1)
+        # car_in_img.save("./img/patch-{}.png".format(count),"PNG")
+        # image_patch.save("./img_patch/patch-{}.png".format(count),"PNG")
+        # print("image",image)
+
+        
+        # image = image.resize((40,40),PILImage.ANTIALIAS)
         
 
         count += 1
+        distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
         last_signal = image
-        last_signal1 = [orientation, -orientation]
-        action, episode_timesteps = brain.update(last_reward, last_signal,last_signal1, Done, count, episode_timesteps)
+        last_signal1 = [distance, orientation, -orientation]
+        action, episode_timesteps = brain.update(reward, last_signal,last_signal1, Done, count, episode_timesteps)
         Done = 0
-        scores.append(brain.score())
+        # scores.append(brain.score())
         rotation = action
         self.car.move(rotation)
-        distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
+        
 
-        if sand[int(self.car.x),int(self.car.y)] > 0:
+        # print("car x y", int(self.car.x),int(self.car.y), sand[int(self.car.x),int(self.car.y)])
+        # (int(self.car.x), 660-int(self.car.y)
+        # print("sand shape",sand.shape)
+
+        if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
             print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
-            
-            last_reward = -10
+            if distance < last_distance:
+                reward = -0.8
+            else:
+                reward = -1
         else: # otherwise
             self.car.velocity = Vector(2, 0).rotate(self.car.angle)
-            last_reward = -0.2
+            reward = last_reward + 0.2
             print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
             if distance < last_distance:
-                last_reward = 0.3
-            # else:
-            #     last_reward = last_reward +(-0.2)
+                reward = last_reward +(0.5)
+            else:
+                reward = last_reward +(-0.5)
 
-        if self.car.x < 30:
-            self.car.x = randint(30, self.width)
-            self.car.y = randint(30, self.height)
-            last_reward = -10
-            Done = 1
-        if self.car.x > self.width - 30:
-            # self.car.x = self.width - 50
-            self.car.x = randint(30, self.width)
-            self.car.y = randint(30, self.height)
-            last_reward = -10
-            Done = 1
-        if self.car.y < 30:
-            # self.car.y = 50
-            self.car.x = randint(30, self.width)
-            self.car.y = randint(30, self.height)
-            last_reward = -10
-            Done = 1
-        if self.car.y > self.height - 30:
-            # self.car.y = self.height - 50
-            self.car.x = randint(30, self.width)
-            self.car.y = randint(30, self.height)
-            last_reward = -10
-            Done = 1
-        
+        if self.car.x < 40:
+            # print("RAN INTO A MAP EDGE")
+            # self.car.x = 30
+            self.car.x = randint(100, self.width)
+            self.car.y = randint(100, self.height)
+            reward = -10
+            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # Done = 1
+        if self.car.x > self.width - 40:
+            # print("RAN INTO A MAP EDGE")
+            # self.car.x = self.width - 30
+            self.car.x = randint(100, self.width)
+            self.car.y = randint(100, self.height)
+            reward = -10
+            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # Done = 1
+        if self.car.y < 40:
+            # print("RAN INTO A MAP EDGE")
+            # self.car.y = 30
+            self.car.x = randint(100, self.width)
+            self.car.y = randint(100, self.height)
+            reward = -10
+            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # Done = 1
+        if self.car.y > self.height - 40:
+            # print("RAN INTO A MAP EDGE")
+            # self.car.y = self.height - 30
+            self.car.x = randint(100, self.width)
+            self.car.y = randint(100, self.height)
+            reward = -10
+            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # Done = 1
+
         # If the car does not reach the distination or crash into the map walls till 3000 steps
-        if episode_timesteps > 2000:
+        if episode_timesteps > 2500:
             Done = 1
-            self.car.x = randint(30, self.width)
-            self.car.y = randint(30, self.height)
+            # episode_timesteps = 1000
+            reward = -10
+            print("RAN TOO LONG WITH OUT REACHING GOAL")
+            self.car.x = randint(100, self.width)
+            self.car.y = randint(100, self.height)
 
         # A = (1420,622)  b = (9,85)  C = (580,530) D = (780,360) 
         # E = (1100,310) F = (115,450) G = (1050,600)
-        if distance < 25:
+        if distance < 50:
             Done = 1
-            last_reward = 10
-            self.car.x = randint(30, self.width)
-            self.car.y = randint(30, self.height)
+            reward = 10
+            print("GOAL x-{}, y-{} REACH".format(self.car.x,self.car.y))
+            self.car.x = randint(100, self.width)
+            self.car.y = randint(100, self.height)
             if swap == 6:#A
+                print("#############")
+                print("TARGET --- A")
+                print("#############")
                 goal_x = 1420
                 goal_y = 622
                 swap = 5
             elif swap == 5:#C
+                print("#############")
+                print("TARGET --- C")
+                print("#############")
                 goal_x = 580
                 goal_y = 530
                 swap = 4
-            elif swap == 4:#D
-                goal_x = 780
-                goal_y = 360
-                swap = 3
-            elif swap == 3:#E
-                goal_x = 1100
-                goal_y = 310
-                swap = 2
-            elif swap == 2:#F
+            elif swap == 4:#F
+                print("#############")
+                print("TARGET --- F")
+                print("#############")
                 goal_x = 115
                 goal_y = 450
                 swap = 0
-            elif swap == 1:#G
-                goal_x = 1050
-                goal_y = 600
-                swap = 1
-            else:#B
-                goal_x = 9
-                goal_y = 85
+            else:#D
+                print("#############")
+                print("TARGET --- D")
+                print("#############")
+                goal_x = 780
+                goal_y = 360
                 swap = 6
         last_distance = distance
+        last_reward = reward
 
 # Adding the painting tools
 
@@ -260,33 +335,7 @@ class CarApp(App):
         parent = Game()
         parent.serve_car()
         Clock.schedule_interval(parent.update, 1.0/60.0)
-        self.painter = MyPaintWidget()
-        clearbtn = Button(text = 'clear')
-        savebtn = Button(text = 'save', pos = (parent.width, 0))
-        loadbtn = Button(text = 'load', pos = (2 * parent.width, 0))
-        clearbtn.bind(on_release = self.clear_canvas)
-        savebtn.bind(on_release = self.save)
-        loadbtn.bind(on_release = self.load)
-        parent.add_widget(self.painter)
-        parent.add_widget(clearbtn)
-        parent.add_widget(savebtn)
-        parent.add_widget(loadbtn)
         return parent
-
-    def clear_canvas(self, obj):
-        global sand
-        self.painter.canvas.clear()
-        sand = np.zeros((longueur,largeur))
-
-    def save(self, obj):
-        print("saving brain...")
-        brain.save()
-        plt.plot(scores)
-        plt.show()
-
-    def load(self, obj):
-        print("loading last saved brain...")
-        brain.load()
 
 # Running the whole thing
 if __name__ == '__main__':
