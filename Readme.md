@@ -50,4 +50,4 @@ But the policy netork does not estimate good actions, in a way it is giving simi
 
 **I am using a CPU based pc with a ram size of 8GB and 4 cpu cores.**
 
-**I have everything integrted into code linked here for the TD3, but for some reason the car is just taking circular paths. I need few more days to figure out the reason and resolve the issue**
+**I have everything integrted into code linked here for the TD3, but for some reason the car is just taking circular paths.**
