@@ -127,58 +127,39 @@ class Game(Widget):
         largeur = self.height
         if first_update:
             init()
-        # self.car.y = 660 - self.car.y
 
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
-        # print("carx y", int(self.car.x), int(self.car.y))
+
         orientation = Vector(*self.car.velocity).angle((xx,yy))/180.
 
-        # img = PILImage.open("./images/mask.png").convert('L')
-        # img = img.rotate(90, PILImage.NEAREST, expand = 1)
-        # print("img",type(img))
-        # car_img = PILImage.open("./images/car.png")
-        # car_img = car_img.resize((20,10),PILImage.ANTIALIAS)
-        # print("car x y first", int(self.car.x), int(self.car.y))
 
         img = PILImage.open("./images/MASK1.png").convert('L')
-        # car_img =  car_img.rotate(-self.car.angle, PILImage.NEAREST, expand = 1)
-        # car_img = scipy.ndimage.rotate(car_img, -self.car.angle, mode='constant', cval=1.0, reshape=False, prefilter=False)
-        # img_citymap = PILImage.open("./images/citymap.jpeg")
 
         car_in_img = img
-        # car_in_img = car_in_img.rotate(90, PILImage.NEAREST, expand = 1)
-        # import pdb;pdb.set_trace()
         car_img1 =  car_img.rotate(self.car.angle, PILImage.NEAREST, expand = 1)
+        
+        # Paste car image in the black & weight map it its location
         car_in_img.paste(car_img1, (int(self.car.x), 660-int(self.car.y)), car_img1)
         
         # img_citymap.paste(car_img, (int(self.car.x), int(self.car.y)), car_img)
         img_car_sand = np.asarray(car_in_img)/255
-        # img_car_citymap = np.asarray(img_citymap)/255
-        # print("img car sand", img_car_citymap.shape)
-        # print("img car sand",img_car_sand[:20,:20])
+
+        # Take a patch of 60x60 fromt he black and wight map image with car pasted in its place
         image = img_car_sand[660-int(self.car.y)-30:660-int(self.car.y)+30, int(self.car.x)-30:int(self.car.x)+30]
-        # img_car_citymap_patch = img_car_citymap[int(self.car.x)-30:int(self.car.x)+30, int(self.car.y)-30:int(self.car.y)+30]
-
-        # image = scipy.ndimage.rotate(image, -self.car.angle, mode='constant', cval=1.0, reshape=False, prefilter=False)
         
-
-        # print("image patch",image.shape, int(self.car.x), 660-int(self.car.y))
-        print("image shape", image.shape)
-        print("car y x", self.car.y, self.car.x)
-        print(660-int(self.car.y)-30, 660-int(self.car.y)+30, int(self.car.x)-30, int(self.car.x)+30)
+        
+        # Resize image from 60x60 to 40x40
         image = cv2.resize(image, dsize=(40, 40), interpolation=cv2.INTER_CUBIC)
         # print("image patch",image.shape)
 
         # image_patch = PILImage.fromarray(np.uint8(cm.gist_earth(image)*255))
-        # img = img.rotate(90, PILImage.NEAREST, expand = 1)#;print("img 90",img.shape)
-        # car_in_img = car_in_img.rotate(90, PILImage.NEAREST, expand = 1)
+        
+        # Save images of the entire map and the resized patches that will go into the CNN
+        # this is just for visualization purpose and hense commented
         # car_in_img.save("./img/patch-{}.png".format(count),"PNG")
         # image_patch.save("./img_patch/patch-{}.png".format(count),"PNG")
-        # print("image",image)
 
-        
-        # image = image.resize((40,40),PILImage.ANTIALIAS)
         
 
         count += 1
@@ -191,11 +172,6 @@ class Game(Widget):
         rotation = action
         self.car.move(rotation)
         
-
-        # print("car x y", int(self.car.x),int(self.car.y), sand[int(self.car.x),int(self.car.y)])
-        # (int(self.car.x), 660-int(self.car.y)
-        # print("sand shape",sand.shape)
-
         if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
             print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))

@@ -186,10 +186,8 @@ class TD3(object):
     self.reward_window = []
     # self.model = Network(input_size, nb_action)
     self.memory = ReplayBuffer()
-    # self.optimizer = optim.Adam(self.model.parameters(), lr = 0.001)
     self.last_state1 = torch.zeros(state_dim)#.unsqueeze(0)
     self.last_state2 = torch.Tensor(3)#.unsqueeze(0)
-    # self.last_state = torch.zeros(input_size).unsqueeze(0)
     self.last_action = 0
     self.last_reward = 0
     self.action_dim = action_dim
@@ -295,17 +293,14 @@ class TD3(object):
           episode_timesteps = 0
           self.episode_num += 1
 
-        # rand_move_car = random.randint(0,4)
-        # print("count",count)
-        # 20% of the time after 3000 steps pick random steps 
-
-        if count < 1500:
+        # Initial random actions
+        if count < 2500:
           action = random.uniform(-self.max_action,self.max_action)
-          # print("------random actin",action)
         else:
           action = self.select_action(new_state1, new_state2)
           print("action---- from policy", action)
           expl_noise = 0.5
+          # Noise added for the purpose of exloration
           if expl_noise != 0:
             action = (action + np.random.normal(0, expl_noise, size=1)).clip(-self.max_action, self.max_action)
           action = action[0]
@@ -323,9 +318,6 @@ class TD3(object):
             os.makedirs("./pytorch_models")
           self.save()
 
-        # self.reward_window.append(reward)
-        # if len(self.reward_window) > 1000:
-        #     del self.reward_window[0]
         return action, episode_timesteps
 
   def save(self):
