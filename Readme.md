@@ -1,3 +1,9 @@
+Modifications made during the last two weeks:
+1. Used a neuralnet that gives an accuracy of 99% on mnist.
+2. padded the mask image with a pad of 40 pixels around the image. This will protect the car from throughing an error when it reaches the edges of the map.
+3. 
+
+
 **Problem statement:**
 1. On a map environment of city we have to run the car(agent) from one location(goal) to the other.
 2. Using TD3 algorithm to train the continuous policy estimation model.
