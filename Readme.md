@@ -1,7 +1,7 @@
-Modifications made during the last two weeks:
+**Modifications made during the last two weeks:**
 1. Used a neuralnet that gives an accuracy of 99% on mnist.
 2. padded the mask image with a pad of 40 pixels around the image. This will protect the car from throughing an error when it reaches the edges of the map.
-3. 
+3. The image patch that is sent to the CNN is the resized path of the car location showing the car in it, it is resized from 80x80 to 40x40.
 
 
 **Problem statement:**
