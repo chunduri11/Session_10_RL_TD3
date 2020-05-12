@@ -58,15 +58,17 @@ def init():
     global goal_x
     global goal_y
     global first_update
+    pad = 40
     sand = np.zeros((longueur,largeur));print("---",sand.shape)
     img = PILImage.open("./images/mask.png").convert('L')
     # img = img.rotate(90, PILImage.NEAREST, expand = 1)
     car_img = PILImage.open("./images/car.png")
     car_img = car_img.resize((20,10),PILImage.ANTIALIAS)
     sand = np.asarray(img)/255
+    # sand = np.pad(sand, pad_width=pad, mode='maximum')
     print("sand",sand.shape)
-    goal_x = 1420
-    goal_y = 622
+    goal_x = 1100
+    goal_y = 610
     first_update = False
     global swap
     swap = 0
@@ -121,6 +123,7 @@ class Game(Widget):
         global Done
         global count
         global episode_timesteps
+        pad = 40
         
 
         longueur = self.width
@@ -141,25 +144,35 @@ class Game(Widget):
         # Rotate the car located in the map to alighn it to the orientation of goal
         car_img1 =  car_img.rotate(self.car.angle, PILImage.NEAREST, expand = 1)
 
+
         # Paste car image in the black & weight map it its location
         car_in_img.paste(car_img1, (int(self.car.x), 660-int(self.car.y)), car_img1)
         
         # img_citymap.paste(car_img, (int(self.car.x), int(self.car.y)), car_img)
         img_car_sand = np.asarray(car_in_img)/255
 
+        img_car_sand = np.pad(img_car_sand, pad_width=pad, mode='maximum')
+        temp_pad_x = self.car.x + pad
+        temp_pad_y = self.car.y + pad
+        
+
         # Take a patch of 60x60 fromt he black and wight map image with car pasted in its place
-        image = img_car_sand[660-int(self.car.y)-30:660-int(self.car.y)+30, int(self.car.x)-30:int(self.car.x)+30]
+        # print("car loc",self.car.y, self.car.x, img_car_sand.shape)
+        # print('pad pd', temp_pad_x, temp_pad_y)
+        image = img_car_sand[660+2*pad-int(temp_pad_y)-40:660+2*pad-int(temp_pad_y)+40, int(temp_pad_x)-40:int(temp_pad_x)+40]
         
-        
+        # print("patch", 660+pad-int(temp_pad_y)-40, 660+pad-int(temp_pad_y)+40, int(temp_pad_x)-40, int(temp_pad_x)+40)
+        # print("image patch",image.shape)
         # Resize image from 60x60 to 40x40
         image = cv2.resize(image, dsize=(40, 40), interpolation=cv2.INTER_CUBIC)
         # print("image patch",image.shape)
 
+        # img_car_sand = PILImage.fromarray(np.uint8(cm.gist_earth(img_car_sand)*255))
         # image_patch = PILImage.fromarray(np.uint8(cm.gist_earth(image)*255))
         
-        # Save images of the entire map and the resized patches that will go into the CNN
-        # this is just for visualization purpose and hense commented
-        # car_in_img.save("./img/patch-{}.png".format(count),"PNG")
+        # # Save images of the entire map and the resized patches that will go into the CNN
+        # # this is just for visualization purpose and hense commented
+        # img_car_sand.save("./img_map/patch-{}.png".format(count),"PNG")
         # image_patch.save("./img_patch/patch-{}.png".format(count),"PNG")
 
         
@@ -167,7 +180,7 @@ class Game(Widget):
         count += 1
         distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
         last_signal = image
-        last_signal1 = [distance, orientation, -orientation]
+        last_signal1 = [orientation, -orientation]
         action, episode_timesteps = brain.update(reward, last_signal,last_signal1, Done, count, episode_timesteps)
         Done = 0
         # scores.append(brain.score())
@@ -175,77 +188,83 @@ class Game(Widget):
         self.car.move(rotation)
         
         if sand[int(self.car.x), int(self.car.y)] > 0:
-            self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
-            print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
-            if distance < last_distance:
-                reward = -0.8
-            else:
-                reward = -1
+            self.car.velocity = Vector(1, 0).rotate(self.car.angle)
+            # print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
+            # if distance < last_distance:
+            #     reward = -0.1
+            # else:
+            reward = -0.5
         else: # otherwise
-            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
-            reward = last_reward + 0.2
-            print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
-            if distance < last_distance:
-                reward = last_reward +(0.5)
-            else:
-                reward = last_reward +(-0.5)
+            self.car.velocity = Vector(3, 0).rotate(self.car.angle)
+            # reward = last_reward + 0.2 if last_reward >= 0.3 else 0.3
+            # print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
+            # if distance < last_distance:
+            #     reward = last_reward +(0.5)
+            # else:
+            #     reward = last_reward +(-0.5)
+            # if last_reward >= -0.5: # punishment or reward for moving toward goal
+            reward = -0.2 if distance >= last_distance else 0.4
 
-        if self.car.x < 40:
+        if self.car.x < 5:
             # print("RAN INTO A MAP EDGE")
-            # self.car.x = 30
-            self.car.x = randint(100, self.width)
-            self.car.y = randint(100, self.height)
-            reward = -10
-            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            self.car.x = 5
+            self.car.x = randint(200, self.width-200)
+            self.car.y = randint(200, self.height-200)
+            reward = -1
+            # self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # self.car.angle = 10
             # Done = 1
-        if self.car.x > self.width - 40:
+        if self.car.x > self.width - 5:
             # print("RAN INTO A MAP EDGE")
-            # self.car.x = self.width - 30
-            self.car.x = randint(100, self.width)
-            self.car.y = randint(100, self.height)
-            reward = -10
-            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            self.car.x = self.width - 5
+            self.car.x = randint(200, self.width-200)
+            self.car.y = randint(200, self.height-200)
+            reward = -1
+            # self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # self.car.angle = 10
             # Done = 1
-        if self.car.y < 40:
+        if self.car.y < 5:
             # print("RAN INTO A MAP EDGE")
-            # self.car.y = 30
-            self.car.x = randint(100, self.width)
-            self.car.y = randint(100, self.height)
-            reward = -10
-            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            self.car.y = 5
+            self.car.x = randint(200, self.width-200)
+            self.car.y = randint(200, self.height-200)
+            reward = -1
+            # self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # self.car.angle = 10
             # Done = 1
-        if self.car.y > self.height - 40:
+        if self.car.y > self.height - 5:
             # print("RAN INTO A MAP EDGE")
-            # self.car.y = self.height - 30
-            self.car.x = randint(100, self.width)
-            self.car.y = randint(100, self.height)
-            reward = -10
-            self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            self.car.y = self.height - 5
+            self.car.x = randint(200, self.width-200)
+            self.car.y = randint(200, self.height-200)
+            reward = -1
+            # self.car.velocity = Vector(2, 0).rotate(self.car.angle)
+            # self.car.angle = 10
             # Done = 1
 
         # If the car does not reach the distination or crash into the map walls till 3000 steps
         if episode_timesteps > 2500:
             Done = 1
-            # episode_timesteps = 1000
-            reward = -10
+            # episode_timesteps = 100
+            reward = -1
             print("RAN TOO LONG WITH OUT REACHING GOAL")
-            self.car.x = randint(100, self.width)
-            self.car.y = randint(100, self.height)
+            self.car.x = randint(100, self.width-100)
+            self.car.y = randint(100, self.height-100)
 
-        # A = (1420,622)  b = (9,85)  C = (580,530) D = (780,360) 
+        # A = (1100,610)  b = (9,85)  C = (580,530) D = (780,360) 
         # E = (1100,310) F = (115,450) G = (1050,600)
         if distance < 50:
             Done = 1
-            reward = 10
+            reward = 2
             print("GOAL x-{}, y-{} REACH".format(self.car.x,self.car.y))
-            self.car.x = randint(100, self.width)
-            self.car.y = randint(100, self.height)
+            self.car.x = randint(100, self.width-100)
+            self.car.y = randint(100, self.height-100)
             if swap == 6:#A
                 print("#############")
                 print("TARGET --- A")
                 print("#############")
-                goal_x = 1420
-                goal_y = 622
+                goal_x = 1100
+                goal_y = 610
                 swap = 5
             elif swap == 5:#C
                 print("#############")

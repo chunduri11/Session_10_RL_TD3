@@ -21,108 +21,112 @@ from collections import deque
 
 class Actor(nn.Module):
   
-  def __init__(self, state_dim, action_dim, max_action):
+  def __init__(self, action_dim, max_action):
     super(Actor, self).__init__()
-    self.conv1 = nn.Conv2d(1, 8, 3, 1,padding=1)
+    self.conv1 = nn.Conv2d(1, 8, 3, 2) 
     self.bn1 = nn.BatchNorm2d(8)
-    self.conv2 = nn.Conv2d(8, 16, 3, 1,padding=1)
-    self.bn2 = nn.BatchNorm2d(16)
-    self.conv3 = nn.Conv2d(16, 16, 3, 1,padding=1)
-    self.bn3 = nn.BatchNorm2d(16)
-    self.dropout1 = nn.Dropout2d(0.2)
-    self.dropout2 = nn.Dropout2d(0.2)
-    # self.avgpooling = nn.AvgPool2d(20)
-    self.fc1 = nn.Linear(6400+3, 128)
-    self.fc2 = nn.Linear(128, action_dim)
+    self.conv2 = nn.Conv2d(8, 12, 3, 1)
+    self.bn2 = nn.BatchNorm2d(12)
+    self.conv3 = nn.Conv2d(12, 12, 3, 1)
+    self.bn3 = nn.BatchNorm2d(12)
+    self.dropout = nn.Dropout2d(0.1)
+    # self.dropout2 = nn.Dropout2d(0.2)
+    # self.glbAvgpool = nn.AdaptiveAvgPool2d(1)
+    self.fc1 = nn.Linear(432+2, 256)
+    # self.fc2 = nn.Linear(64, 256)
+    self.fc3 = nn.Linear(256, action_dim)
     self.max_action = max_action
 
   def forward(self, state1, state2):
-    x = F.relu(self.bn1(self.conv1(state1))) # 40x40x8
-    x = F.relu(self.bn2(self.conv2(x))) # 40x40x16
-    x = F.max_pool2d(x, 2) # 20x20x16
-    x = self.dropout1(x) 
-
-    x = F.relu(self.bn3(self.conv3(x))) # 20x20x16
-    # x = self.avgpooling(x) #1x1x16
+    x =  self.dropout(F.relu(self.bn1(self.conv1(state1)))) # 19x19x8 becaouse of stride 2
+    x =  self.dropout(F.relu(self.bn2(self.conv2(x)))) # 17x17x16
+    x = F.max_pool2d(x, 2) # 8x8x16
+    # x = self.dropout1(x) 
+    x =  self.dropout(F.relu(self.bn3(self.conv3(x)))) # 6x6x16
+    # x = self.glbAvgpool(x) #1x1x16
+    # print("x",x.shape)
     x = torch.flatten(x, 1)
     x = torch.cat([x, state2], 1)
 
-    x = self.dropout2(F.relu(self.fc1(x)))
-    actions = self.fc2(x)
+    x = self.dropout(F.relu(self.fc1(x)))
+    # x = self.dropout2(F.relu(self.fc2(x)))
+    actions = self.fc3(x)
     return self.max_action * torch.tanh(actions)
 
 
 
 class Critic(nn.Module):
   
-  def __init__(self, state_dim, action_dim):
+  def __init__(self, action_dim):
     super(Critic, self).__init__()
     # Defining the first Critic neural network
-    self.conv1 = nn.Conv2d(1, 8, 3, 1,padding=1)
-    self.conv2 = nn.Conv2d(8, 16, 3, 1,padding=1)
-    self.conv3 = nn.Conv2d(16, 16, 3, 1,padding=1)
+    self.conv1 = nn.Conv2d(1, 8, 3, 2)
+    self.conv2 = nn.Conv2d(8, 12, 3, 1)
+    self.conv3 = nn.Conv2d(12, 12, 3, 1)
     self.bn1 = nn.BatchNorm2d(8)
-    self.bn2 = nn.BatchNorm2d(16)
-    self.bn3 = nn.BatchNorm2d(16)
-    self.dropout1 = nn.Dropout2d(0.2)
-    self.dropout2 = nn.Dropout2d(0.2)
-    self.avgpooling1 = nn.AvgPool2d(20)
-    self.fc1 = nn.Linear(6400+4, 128)
-    self.fc2 = nn.Linear(128, 1)
+    self.bn2 = nn.BatchNorm2d(12)
+    self.bn3 = nn.BatchNorm2d(12)
+    self.dropout = nn.Dropout2d(0.1)
+    # self.dropout2 = nn.Dropout2d(0.2)
+    self.glbAvgpool1 = nn.AdaptiveAvgPool2d(1)
+    self.fc1 = nn.Linear(432+3, 256)
+    # self.fc2 = nn.Linear(128, 256)
+    self.fc3 = nn.Linear(256, 1)
     # Defining the second Critic neural network
-    self.conv4 = nn.Conv2d(1, 8, 3, 1,padding=1)
-    self.conv5 = nn.Conv2d(8, 16, 3, 1,padding=1)
-    self.conv6 = nn.Conv2d(16, 16, 3, 1,padding=1)
+    self.conv4 = nn.Conv2d(1, 8, 3, 2)
+    self.conv5 = nn.Conv2d(8, 12, 3, 1)
+    self.conv6 = nn.Conv2d(12, 12, 3, 1)
     self.bn4 = nn.BatchNorm2d(8)
-    self.bn5 = nn.BatchNorm2d(16)
-    self.bn6 = nn.BatchNorm2d(16)
+    self.bn5 = nn.BatchNorm2d(12)
+    self.bn6 = nn.BatchNorm2d(12)
     self.dropout3 = nn.Dropout2d(0.2)
     self.dropout4 = nn.Dropout2d(0.2)
-    self.avgpooling2 = nn.AvgPool2d(20)
-    self.fc3 = nn.Linear(6400+4, 128)
-    self.fc4 = nn.Linear(128, 1)
+    self.glbAvgpool2 = nn.AdaptiveAvgPool2d(1)
+    self.fc4 = nn.Linear(432+3, 256)
+    # self.fc5 = nn.Linear(128, 256)
+    self.fc6 = nn.Linear(256, 1)
 
   def forward(self, state1, state2, u):
     # xu = torch.cat([x, u], 1)
     # Forward-Propagation on the first Critic Neural Network
-    x1 = F.relu(self.bn1(self.conv1(state1))) # 38x38x8
-    x1 = F.relu(self.bn2(self.conv2(x1))) # 36x36x16
+    x1 = self.dropout(F.relu(self.bn1(self.conv1(state1)))) # 20x20x8
+    x1 = self.dropout(F.relu(self.bn2(self.conv2(x1)))) # 20x20x16
     x1 = F.max_pool2d(x1, 2) # 18x18x16
-    x1 = self.dropout1(x1) 
-    x1 = F.relu(self.bn3(self.conv3(x1))) # 16x16x16
-    # x1 = self.avgpooling1(x1) #1x1x16
+    # x1 = self.dropout1(x1) 
+    x1 = self.dropout(F.relu(self.bn3(self.conv3(x1)))) # 10x10x16
+    # x1 = self.glbAvgpool1(x1) #1x1x16
     x1 = torch.flatten(x1, 1)
     x1 = torch.cat([x1,state2, u], 1)
-    x1 = F.relu(self.fc1(x1))
-    x1 = self.dropout2(x1)
-    x1 = self.fc2(x1)
+    x1 = self.dropout(F.relu(self.fc1(x1)))
+    # x1 = self.dropout2(F.relu(self.fc2(x1)))
+    x1 = self.fc3(x1)
 
     # Forward-Propagation on the second Critic Neural Network
-    x2 = F.relu(self.bn4(self.conv4(state1))) # 38x38x8
-    x2 = F.relu(self.bn5(self.conv5(x2))) # 36x36x16
+    x2 = self.dropout(F.relu(self.bn4(self.conv4(state1)))) # 38x38x8
+    x2 = self.dropout(F.relu(self.bn5(self.conv5(x2)))) # 36x36x16
     x2 = F.max_pool2d(x2, 2) # 18x18x16
-    x2 = self.dropout3(x2) 
-    x2 = F.relu(self.bn6(self.conv6(x2))) # 16x16x16
-    # x2 = self.avgpooling2(x2) #1x1x16
+    # x2 = self.dropout3(x2) 
+    x2 = self.dropout(F.relu(self.bn6(self.conv6(x2)))) # 16x16x16
+    # x2 = self.glbAvgpool2(x2) #1x1x16
     x2 = torch.flatten(x2, 1)
     x2 = torch.cat([x2, state2, u], 1)
-    x2 = F.relu(self.fc3(x2))
-    x2 = self.dropout4(x2)
-    x2 = self.fc4(x2)
+    x2 = self.dropout(F.relu(self.fc4(x2)))
+    # x2 = self.dropout4(F.relu(self.fc5(x2)))
+    x2 = self.fc6(x2)
     return x1, x2
 
   def Q1(self, state1, state2, u):
-    x1 = F.relu(self.bn1(self.conv1(state1))) # 38x38x8
-    x1 = F.relu(self.bn2(self.conv2(x1))) # 36x36x16
+    x1 = self.dropout(F.relu(self.bn1(self.conv1(state1)))) # 38x38x8
+    x1 = self.dropout(F.relu(self.bn2(self.conv2(x1)))) # 36x36x16
     x1 = F.max_pool2d(x1, 2) # 18x18x16
-    x1 = self.dropout1(x1) 
+    # x1 = self.dropout1(x1) 
     x1 = F.relu(self.bn3(self.conv3(x1))) # 16x16x16
-    # x1 = self.avgpooling1(x1) #1x1x16
+    # x1 = self.glbAvgpool1(x1) #1x1x16
     x1 = torch.flatten(x1, 1)
     x1 = torch.cat([x1,state2, u], 1)
-    x1 = F.relu(self.fc1(x1))
-    x1 = self.dropout2(x1)
-    x1 = self.fc2(x1)
+    x1 = self.dropout(F.relu(self.fc1(x1)))
+    # x1 = self.dropout2(F.relu(self.fc2(x1)))
+    x1 = self.fc3(x1)
     return x1
 
 class ReplayBuffer(object):
@@ -161,16 +165,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class TD3(object):
   
   def __init__(self, state_dim, action_dim, max_action):
-    self.actor = Actor(state_dim, action_dim, max_action).to(device)
-    self.actor_target = Actor(state_dim, action_dim, max_action).to(device)
+    self.actor = Actor(action_dim, max_action).to(device)
+    self.actor_target = Actor(action_dim, max_action).to(device)
     self.actor_target.load_state_dict(self.actor.state_dict())
-    self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr = 0.007,weight_decay=0.0005)
-    self.actor_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.actor_optimizer, 'min')
-    self.critic = Critic(state_dim, action_dim).to(device)
-    self.critic_target = Critic(state_dim, action_dim).to(device)
+    self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr = 3e-4)#,weight_decay=0.0005)
+    # self.actor_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.actor_optimizer, 'min')
+    self.critic = Critic(action_dim).to(device)
+    self.critic_target = Critic(action_dim).to(device)
     self.critic_target.load_state_dict(self.critic.state_dict())
-    self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr = 0.007,weight_decay=0.0005)
-    self.critic_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.critic_optimizer, 'min')
+    self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr = 3e-4)#,weight_decay=0.0005)
+    # self.critic_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.critic_optimizer, 'min')
 
     #########################################################
     model_parameters = filter(lambda p: p.requires_grad, self.actor.parameters())
@@ -187,7 +191,7 @@ class TD3(object):
     # self.model = Network(input_size, nb_action)
     self.memory = ReplayBuffer()
     self.last_state1 = torch.zeros(state_dim)#.unsqueeze(0)
-    self.last_state2 = torch.Tensor(3)#.unsqueeze(0)
+    self.last_state2 = torch.Tensor(2)#.unsqueeze(0)
     self.last_action = 0
     self.last_reward = 0
     self.action_dim = action_dim
@@ -294,16 +298,17 @@ class TD3(object):
           self.episode_num += 1
 
         # Initial random actions
-        if count < 2500:
+        if count < 15000:
           action = random.uniform(-self.max_action,self.max_action)
         else:
           action = self.select_action(new_state1, new_state2)
-          print("action---- from policy", action)
-          expl_noise = 0.5
+          # print("action---- from policy", action)
+          expl_noise = 1
           # Noise added for the purpose of exloration
           if expl_noise != 0:
             action = (action + np.random.normal(0, expl_noise, size=1)).clip(-self.max_action, self.max_action)
           action = action[0]
+          # print("action---- from policy", action)
         self.last_action = action
         self.last_state1 = new_state1
         self.last_state2 = new_state2
