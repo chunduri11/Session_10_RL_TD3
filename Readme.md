@@ -4,7 +4,9 @@
 3. The image patch that is sent to the CNN is the resized path of the car location showing the car in it, it is resized from 80x80 to 40x40.
 4. Along with the image I am sending the distance to the goal, negative and positive orientation to the goal as state information.
 
-I have tried every thing I can think, still not able to make it work. 
+I have tried every thing I can think of, still not able to make it work. 
+
+I feel that my limited compute(CPU), has made me to train the code for atleast 5hrs for every change(hyperparameter tuning, reward tuning etc) to show its effect. 
 
 **Problem statement:**
 1. On a map environment of city we have to run the car(agent) from one location(goal) to the other.
